@@ -41,7 +41,7 @@
     /* 配信画面 */
     .stream-area {
       flex: 1;
-      background: linear-gradient(135deg, #2a085c, #421078);
+      background: #000;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -49,25 +49,50 @@
       position: relative;
       overflow: hidden;
     }
-    .avatar {
-      font-size: 80px;
-      transition: transform 0.1s;
-      z-index: 2;
+    
+    /* VTuber画像スタイル */
+    .avatar-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .avatar.bounce {
-      transform: scale(1.3) rotate(-5deg);
+    .avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.15s ease-out;
     }
+    /* ギフト受信時の躍動アニメーション */
+    .avatar-img.bounce {
+      transform: scale(1.08) translateY(-10px);
+    }
+    .avatar-img.joy {
+      animation: joyMotion 0.6s ease-in-out;
+    }
+    @keyframes joyMotion {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      25% { transform: scale(1.05) rotate(-3deg); }
+      75% { transform: scale(1.05) rotate(3deg); }
+    }
+
     .comment-box {
       position: absolute;
       top: 15px;
-      background: rgba(0,0,0,0.7);
-      padding: 8px 16px;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      padding: 10px 16px;
       border-radius: 20px;
-      font-size: 14px;
+      font-size: 13px;
       max-width: 80%;
       text-align: center;
       z-index: 10;
       border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     /* エフェクト描画エリア */
@@ -77,10 +102,9 @@
       pointer-events: none;
       z-index: 5;
     }
-    /* 飛び出すパーティクル */
     .particle {
       position: absolute;
-      font-size: 24px;
+      font-size: 28px;
       user-select: none;
       animation: popOut var(--duration) ease-out forwards;
     }
@@ -91,10 +115,9 @@
       }
       100% {
         opacity: 0;
-        transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(var(--rot));
+        transform: translate(var(--tx), var(--ty)) scale(1.6) rotate(var(--rot));
       }
     }
-    /* 巨大城降臨カットイン */
     .castle-cutin {
       position: absolute;
       top: 50%; left: 50%;
@@ -119,6 +142,7 @@
       font-weight: bold;
       font-size: 14px;
       border-bottom: 1px solid #333;
+      z-index: 10;
     }
 
     /* コイン稼ぎエリア */
@@ -127,6 +151,7 @@
       padding: 8px 15px;
       display: flex;
       gap: 10px;
+      z-index: 10;
     }
     .btn-earn {
       flex: 1;
@@ -151,6 +176,7 @@
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
+      z-index: 10;
     }
     .btn {
       background: #333;
@@ -182,7 +208,12 @@
 <div class="screen" id="screen">
   <div class="stream-area">
     <div class="comment-box" id="comment">「みんな～！配信見に来てくれてありがとうっぴ！」</div>
-    <div class="avatar" id="avatar">🐱</div>
+    
+    <!-- VTuber画像表示領域 -->
+    <div class="avatar-container">
+      <img src="vtuber.jpg" id="avatar" class="avatar-img" alt="VTuber">
+    </div>
+
     <div class="effects-layer" id="effects"></div>
   </div>
 
@@ -191,7 +222,6 @@
     <div>ランク: <span id="rank" style="color: #ff4081;">初見さん</span></div>
   </div>
 
-  <!-- コイン獲得ボタン領域 -->
   <div class="earn-area">
     <button class="btn-earn btn-tap" onclick="earnCoins(50)">👏 拍手 (+50G)</button>
     <button class="btn-earn btn-ad" onclick="watchAd()">📺 CMを見る (+3000G)</button>
@@ -217,14 +247,12 @@
   let coins = 10000;
   let totalSpent = 0;
 
-  // コイン獲得（タップ）
   function earnCoins(amount) {
     coins += amount;
     updateCoinsDisplay();
     createSingleParticle('🪙', Math.random() * 60 + 20, 75);
   }
 
-  // コイン獲得（CM視聴擬似処理）
   function watchAd() {
     const comment = document.getElementById('comment');
     comment.innerText = "「CM視聴中...（3秒待ってね！）」";
@@ -251,19 +279,24 @@
     updateCoinsDisplay();
     updateRank();
 
-    // 配信者のリアクション
     const avatar = document.getElementById('avatar');
     const comment = document.getElementById('comment');
     
     comment.innerText = `「${icon} ${reaction}」`;
-    avatar.classList.add('bounce');
-    setTimeout(() => avatar.classList.remove('bounce'), 200);
 
-    // ギフトランク別のエフェクト呼び出し
+    // ギフト時のアニメーション発動
+    avatar.classList.remove('bounce', 'joy');
+    void avatar.offsetWidth; // リフロー発生でアニメーションリセット
+    
+    if (intensity === 'huge' || intensity === 'large') {
+      avatar.classList.add('joy');
+    } else {
+      avatar.classList.add('bounce');
+    }
+
     triggerEffects(icon, intensity);
   }
 
-  // エフェクト分岐処理
   function triggerEffects(icon, intensity) {
     const screen = document.getElementById('screen');
 
@@ -278,7 +311,6 @@
       screen.classList.add('shake');
       setTimeout(() => screen.classList.remove('shake'), 500);
     } else if (intensity === 'huge') {
-      // 🏰 城：カットイン ＋ 画面シェイク ＋ 大量の紙吹雪
       screen.classList.add('shake');
       setTimeout(() => screen.classList.remove('shake'), 500);
       
@@ -290,29 +322,24 @@
     }
   }
 
-  // 画面全体に散らばる we-particle エフェクト
   function createBurstEffect(icon, count) {
     for (let i = 0; i < count; i++) {
       setTimeout(() => {
-        const startX = 50; // 中央から放射
-        const startY = 50;
-        createSingleParticle(icon, startX, startY);
-      }, i * 30); // 連続して飛び出すアニメーション
+        createSingleParticle(icon, 50, 50);
+      }, i * 30);
     }
   }
 
-  // 単体パーティクル作成
   function createSingleParticle(icon, startXPercent, startYPercent) {
     const layer = document.getElementById('effects');
     const item = document.createElement('div');
     item.className = 'particle';
     item.innerText = icon;
 
-    // ランダムな方向と距離に飛ばす
     const angle = Math.random() * Math.PI * 2;
     const distance = 80 + Math.random() * 150;
     const tx = Math.cos(angle) * distance + 'px';
-    const ty = Math.sin(angle) * distance - 40 + 'px'; // やや上に跳ね上がる
+    const ty = Math.sin(angle) * distance - 40 + 'px';
     const rot = (Math.random() - 0.5) * 720 + 'deg';
     const duration = (0.8 + Math.random() * 0.6) + 's';
 
@@ -327,7 +354,6 @@
     setTimeout(() => item.remove(), 1400);
   }
 
-  // 🏰 専用のカットイン演出
   function createCastleCutIn() {
     const layer = document.getElementById('effects');
     const castle = document.createElement('div');
