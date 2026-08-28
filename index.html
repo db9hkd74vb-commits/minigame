@@ -255,12 +255,13 @@
 
   function watchAd() {
     const comment = document.getElementById('comment');
-    comment.innerText = "「CM視聴中...（3秒待ってね！）」";
+    comment.innerText = "「神様にお祈り中...（3秒待ってね！）」";
     setTimeout(() => {
-      coins += 3000;
+      coins += 50000;
       updateCoinsDisplay();
-      comment.innerText = "「CM視聴ありがとー！3000Gゲットだね！」";
-      createBurstEffect('💰', 15);
+      comment.innerText = "「願いが届いた！50000Gゲット！！」";
+      createBurstEffect('🙏', 15);
+      createBurstEffect('✨', 15);
     }, 1500);
   }
 
