@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>配信者へギフト投げゲーム</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #121212;
+      color: #fff;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .screen {
+      width: 100%;
+      max-width: 400px;
+      height: 650px;
+      background: #1e1e1e;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    /* 配信画面 */
+    .stream-area {
+      flex: 1;
+      background: linear-gradient(135deg, #2a085c, #421078);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .avatar {
+      font-size: 80px;
+      transition: transform 0.1s;
+    }
+    .avatar.bounce {
+      transform: scale(1.3) rotate(-5deg);
+    }
+    .comment-box {
+      position: absolute;
+      top: 15px;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      max-width: 80%;
+      text-align: center;
+    }
+    /* エフェクト描画用 */
+    .effects-layer {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    .floating-item {
+      position: absolute;
+      font-size: 40px;
+      animation: floatUp 1.2s ease-out forwards;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(0.8); }
+      50% { transform: translateY(-80px) scale(1.2); }
+      100% { opacity: 0; transform: translateY(-160px) scale(1); }
+    }
+    /* ステータスバー */
+    .status-bar {
+      background: #2a2a2a;
+      padding: 10px 15px;
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    /* ギフトボタン領域 */
+    .controls {
+      padding: 15px;
+      background: #181818;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .btn {
+      background: #333;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn:active {
+      transform: scale(0.95);
+    }
+    .btn-tea { border-color: #4caf50; }
+    .btn-heart { border-color: #e91e63; }
+    .btn-diamond { border-color: #00bcd4; }
+    .btn-castle { border-color: #ff9800; background: linear-gradient(135deg, #ff9800, #e65100); }
+    .btn span { font-size: 20px; margin-bottom: 2px; }
+  </style>
+</head>
+<body>
+
+<div class="screen">
+  <div class="stream-area">
+    <div class="comment-box" id="comment">「みんな～！配信見に来てくれてありがとうっぴ！」</div>
+    <div class="avatar" id="avatar">🐱</div>
+    <div class="effects-layer" id="effects"></div>
+  </div>
+
+  <div class="status-bar">
+    <div>所持コイン: <span id="coins" style="color: #ffd700;">10000</span> G</div>
+    <div>リスナーランク: <span id="rank" style="color: #ff4081;">初見さん</span></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-tea" onclick="sendGift('🍵', 100, 'お茶ありがと～！ほっと一息つくね！')">
+      <span>🍵 お茶</span>100 G
+    </button>
+    <button class="btn btn-heart" onclick="sendGift('💖', 500, 'キャー！ハート助かる！大好き！')">
+      <span>💖 ハート</span>500 G
+    </button>
+    <button class="btn btn-diamond" onclick="sendGift('💎', 2000, 'ダイヤ！？やば！！画面が眩しい！！')">
+      <span>💎 ダイヤ</span>2000 G
+    </button>
+    <button class="btn btn-castle" onclick="sendGift('🏰', 10000, 'うおおお城立ったー！！神リスナー降臨！！！')">
+      <span>🏰 城</span>10000 G
+    </button>
+  </div>
+</div>
+
+<script>
+  let coins = 10000;
+  let totalSpent = 0;
+
+  function sendGift(icon, price, reaction) {
+    if (coins < price) {
+      document.getElementById('comment').innerText = "「あれ？コイン足りなくない？無理しないでね！」";
+      return;
+    }
+
+    // コイン減算・消費額加算
+    coins -= price;
+    totalSpent += price;
+    document.getElementById('coins').innerText = coins;
+
+    // ランク更新
+    updateRank();
+
+    // 配信者のリアクション
+    const avatar = document.getElementById('avatar');
+    const comment = document.getElementById('comment');
+    
+    comment.innerText = `「${icon} ${reaction}」`;
+    avatar.classList.add('bounce');
+    setTimeout(() => avatar.classList.remove('bounce'), 200);
+
+    // エフェクト生成
+    createEffect(icon);
+  }
+
+  function createEffect(icon) {
+    const layer = document.getElementById('effects');
+    const item = document.createElement('div');
+    item.className = 'floating-item';
+    item.innerText = icon;
+    
+    // ランダムな横位置から出現
+    const randomX = Math.random() * 70 + 15;
+    item.style.left = randomX + '%';
+    item.style.top = '60%';
+
+    layer.appendChild(item);
+    setTimeout(() => item.remove(), 1200);
+  }
+
+  function updateRank() {
+    const rankEl = document.getElementById('rank');
+    if (totalSpent >= 20000) {
+      rankEl.innerText = "石油王 👑";
+      rankEl.style.color = "#ffd700";
+    } else if (totalSpent >= 5000) {
+      rankEl.innerText = "TO（トップオタ） 🌟";
+      rankEl.style.color = "#ff4081";
+    } else if (totalSpent >= 1000) {
+      rankEl.innerText = "常連さん 🎵";
+      rankEl.style.color = "#00e676";
+    }
+  }
+</script>
+
+</body>
+</html>
